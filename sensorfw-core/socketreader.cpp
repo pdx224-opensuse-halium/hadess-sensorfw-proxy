@@ -108,7 +108,7 @@ bool SocketReader::read(void* buffer, int size)
     int retry = 100;
     while(bytesRead < size)
     {
-        int bytes = socket_->read((char *)buffer + bytesRead, size);
+        int bytes = socket_->read((char *)buffer + bytesRead, size - bytesRead);
         if(bytes == 0)
         {
             if(!retry)
