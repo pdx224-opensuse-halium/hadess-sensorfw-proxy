@@ -814,7 +814,7 @@ int main (int argc, char **argv)
 				}
 			});
 	}
-	if (data->prox_available == TRUE) {
+	if (data->accel_available == TRUE) {
 		orientation_registration = data->orientation_sensor->register_orientation_handler(
 			[data](repowerd::OrientationData value) {
 				OrientationUp orientation = data->previous_orientation;
