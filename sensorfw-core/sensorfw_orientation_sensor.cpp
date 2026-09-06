@@ -66,10 +66,15 @@ void repowerd::SensorfwOrientationSensor::disable_orientation_events()
 void repowerd::SensorfwOrientationSensor::data_recived_impl()
 {
     QVector<PoseData> values;
-    repowerd::OrientationData output;
-    if(m_socket->read<PoseData>(values)) {
-        output = (repowerd::OrientationData) values[0].orientation_;
-    }
+    if (!m_socket->read<PoseData>(values) || values.isEmpty())
+        return;
+
+    // A frame may carry more than one sample.  Only the newest one describes
+    // the current pose; feeding an older sample to the handler would leave the
+    // exported AccelerometerOrientation property stale, and because both
+    // sensord (OrientationSensorChannel::emitData) and this proxy only act on
+    // *changes*, a stale value is never corrected on its own.
+    auto const output = (repowerd::OrientationData) values.last().orientation_;
 
     handler(output);
 }
