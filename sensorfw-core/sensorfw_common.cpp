@@ -131,7 +131,20 @@ void repowerd::Sensorfw::run_socket_reader()
     read_loop = std::thread([this](){
         while (m_socket->isConnected()) {
             if (m_socket->socket()->waitForReadyRead(-1)) {
-                data_recived_impl();
+                // QLocalSocket::waitForReadyRead() only returns when *new* bytes
+                // arrive from the peer; it does not fire again for data that is
+                // already sitting in the internal read buffer.  sensord writes
+                // every sample as its own [count][payload] frame, so whenever two
+                // frames land in the receive buffer between two wakeups we would
+                // consume only the first one and leave the second one queued.
+                // From that moment on the reader is permanently one frame behind
+                // the sensor, which - for the edge triggered orientation stream -
+                // shows up as a fixed one-step (90 degree) orientation error that
+                // never resolves.  Drain everything that is buffered instead.
+                do {
+                    data_recived_impl();
+                } while (m_socket->isConnected() &&
+                         m_socket->socket()->bytesAvailable() >= (qint64)sizeof(unsigned int));
             }
         }
     });
